@@ -418,3 +418,17 @@ def generate_fun_facts_storyboard(client, title: str, story: str, language: str 
 
 def generate_life_pro_tips_storyboard(client, title: str, story: str, language: str = "English", tone: str = "Neutral") -> Dict[str, Any]:
     return generate_storyboard(client, title, story, "life pro tips", language=language, tone=tone)
+
+def generate_video_ideas(client, prompt: str, language: str = "English", tone: str = "Neutral") -> List[str]:
+    messages = [
+        {
+            "role": "system",
+            "content": f"You are a creative content strategist. Generate 10 engaging video ideas based on a given topic. Language: {language}. Tone: {tone}."
+        },
+        {"role": "user", "content": f"Generate 10 video ideas for: {prompt}. Return only the list of ideas, one per line, no numbering or extra text."}
+    ]
+    response = call_openai_api(client, messages)
+    if response:
+        ideas = [line.strip().replace("- ", "") for line in response.strip().split("\n") if line.strip()]
+        return ideas[:10]
+    return []

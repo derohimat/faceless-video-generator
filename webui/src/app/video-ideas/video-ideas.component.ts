@@ -1,4 +1,5 @@
-import { Component } from '@angular/core';
+import { Component, OnInit } from '@angular/core';
+import { HttpClient } from '@angular/common/http';
 
 @Component({
   selector: 'app-video-ideas',
@@ -19,21 +20,27 @@ import { Component } from '@angular/core';
           <span class="char-count">{{prompt.length}}/20000</span>
 
           <div class="suggestions-slider">
-            <button class="suggestion-pill">👑 Write a story about Sleeping Beauty</button>
-            <button class="suggestion-pill">⛵ Write a story about Noah's Ark</button>
-            <button class="suggestion-pill">🏛️ Create a documentary about ancient Rome</button>
+            <button class="suggestion-pill" (click)="prompt = 'Write a story about Sleeping Beauty'">👑 Write a story about Sleeping Beauty</button>
+            <button class="suggestion-pill" (click)="prompt = 'Write a story about Noah\'s Ark'">⛵ Write a story about Noah's Ark</button>
+            <button class="suggestion-pill" (click)="prompt = 'Create a documentary about ancient Rome'">🏛️ Create a documentary about ancient Rome</button>
           </div>
 
           <div class="controls-row">
             <div class="control-group">
               <label class="input-label">Output language</label>
-              <select><option>English</option><option>Spanish</option></select>
+              <select [(ngModel)]="selectedLanguage">
+                <option *ngFor="let lang of availableLanguages" [value]="lang">{{lang}}</option>
+              </select>
             </div>
             <div class="control-group">
               <label class="input-label">Tone</label>
-              <select><option>Academic</option><option>Neutral</option></select>
+              <select [(ngModel)]="selectedTone">
+                <option *ngFor="let tone of availableTones" [value]="tone">{{tone}}</option>
+              </select>
             </div>
-            <button class="btn-primary" (click)="generateIdeas()">Generate</button>
+            <button class="btn-primary" [disabled]="isGenerating" (click)="generateIdeas()">
+              {{ isGenerating ? 'Generating...' : 'Generate' }}
+            </button>
           </div>
         </div>
 
@@ -196,23 +203,57 @@ import { Component } from '@angular/core';
     }
   `]
 })
-export class VideoIdeasComponent {
+export class VideoIdeasComponent implements OnInit {
   prompt = '';
-  ideas: string[] = [
-    'Uncovering the Secrets of Pyramid Construction',
-    'Ancient Egyptian Myths Behind the Pyramids',
-    'The Pyramids: A Time Capsule of Ancient Life',
-    'Exploring Pyramid Technology: Was It Alien Help?',
-    'Mysteries of the Sphinx: The Guardian of the Pyramids',
-    'Life After Death: Pyramids and the Egyptian Afterlife',
-    'Hidden Treasures: What Lies Within the Pyramids?',
-    'The Great Pyramid: A Marvel of Ancient Engineering',
-    'Pyramids Through the Ages: Their Evolving Significance',
-    'Ancient Egyptian Art: Stories Carved in Stone'
-  ];
+  ideas: string[] = [];
+  isGenerating = false;
+
+  availableLanguages: string[] = ['English', 'Bahasa Indonesia'];
+  availableTones: string[] = ['Neutral', 'Professional', 'Humorous'];
+
+  selectedLanguage = 'English';
+  selectedTone = 'Neutral';
+
+  constructor(private http: HttpClient) { }
+
+  ngOnInit() {
+    this.fetchConfig();
+  }
+
+  fetchConfig() {
+    this.http.get<any>('http://localhost:8000/api/config').subscribe({
+      next: (config) => {
+        this.availableLanguages = config.languages || ['English', 'Bahasa Indonesia'];
+        this.availableTones = config.tones || ['Neutral', 'Professional', 'Humorous'];
+        if (this.availableLanguages.length > 0) this.selectedLanguage = this.availableLanguages[0];
+        if (this.availableTones.length > 0) this.selectedTone = this.availableTones[0];
+      },
+      error: (err) => console.error('Failed to fetch config', err)
+    });
+  }
 
   generateIdeas() {
-    // In a real app, this would call the backend API to generate 10 ideas based on this.prompt.
-    // Since we are mocking the ideas as per User UI, we just simulate the loading state if needed.
+    if (!this.prompt.trim()) {
+      alert('Please enter a topic first.');
+      return;
+    }
+
+    this.isGenerating = true;
+    const payload = {
+      prompt: this.prompt,
+      language: this.selectedLanguage,
+      tone: this.selectedTone
+    };
+
+    this.http.post<any>('http://localhost:8000/api/ideas', payload).subscribe({
+      next: (res) => {
+        this.ideas = res.ideas;
+        this.isGenerating = false;
+      },
+      error: (err) => {
+        alert('Failed to generate ideas: ' + err.message);
+        this.isGenerating = false;
+      }
+    });
   }
 }

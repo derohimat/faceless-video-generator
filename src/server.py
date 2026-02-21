@@ -25,6 +25,7 @@ from story_generator import (
     generate_characters,
     generate_philosophy_storyboard,
     generate_fun_facts_storyboard,
+    generate_video_ideas,
 )
 from image_generator import generate_and_download_images
 from video_creator import create_video
@@ -67,6 +68,11 @@ class GenerateRequest(BaseModel):
 
 class ScriptRequest(BaseModel):
     story_type: str
+    language: str = "English"
+    tone: str = "Neutral"
+
+class IdeasRequest(BaseModel):
+    prompt: str
     language: str = "English"
     tone: str = "Neutral"
 
@@ -218,6 +224,15 @@ def generate_script(request: ScriptRequest):
         storyboard_project["description"] = description
         
         return storyboard_project
+    except Exception as e:
+        traceback.print_exc()
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.post("/api/ideas")
+def get_video_ideas(request: IdeasRequest):
+    try:
+        ideas = generate_video_ideas(client, request.prompt, request.language, request.tone)
+        return {"ideas": ideas}
     except Exception as e:
         traceback.print_exc()
         raise HTTPException(status_code=500, detail=str(e))
