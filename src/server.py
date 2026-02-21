@@ -16,6 +16,7 @@ from fastapi.responses import FileResponse
 from pydantic import BaseModel
 from dotenv import load_dotenv
 from openai import OpenAI
+import datetime
 
 from utils import STORY_TYPES
 from story_generator import (
@@ -286,7 +287,62 @@ def generate_from_script(request: VideoFromScriptRequest, background_tasks: Back
     background_tasks.add_task(run_video_from_script_job, job_id, request)
     return {"job_id": job_id}
 
-@app.get("/api/status/{job_id}")
+@app.get("/api/videos")
+def list_videos():
+    video_list = []
+    data_dir = os.path.join(os.path.dirname(script_dir), "data")
+    if not os.path.exists(data_dir):
+        return {"videos": []}
+    
+    for story_type in os.listdir(data_dir):
+        story_type_path = os.path.join(data_dir, story_type)
+        if not os.path.isdir(story_type_path):
+            continue
+            
+        for story_title in os.listdir(story_type_path):
+            story_path = os.path.join(story_type_path, story_title)
+            if not os.path.isdir(story_path):
+                continue
+                
+            video_file = os.path.join(story_path, "story_video.mp4")
+            if os.path.exists(video_file):
+                # Search for any image to use as thumbnail
+                thumbnail = ""
+                images_dir = os.path.join(story_path, "images")
+                if os.path.exists(images_dir):
+                    image_files = [f for f in os.listdir(images_dir) if f.endswith(('.png', '.jpg', '.jpeg'))]
+                    if image_files:
+                        # Return relative path or placeholder for now
+                        thumbnail = f"api/thumbnail/{story_type}/{story_title}"
+                
+                video_list.append({
+                    "title": story_title.replace("_", " "),
+                    "story_type": story_type,
+                    "date": datetime.datetime.fromtimestamp(os.path.getctime(video_file)).strftime("%b %d, %Y"),
+                    "thumbnail": thumbnail,
+                    "video_url": f"api/video_file/{story_type}/{story_title}"
+                })
+    
+    return {"videos": video_list}
+
+@app.get("/api/thumbnail/{story_type}/{story_title}")
+def get_thumbnail(story_type: str, story_title: str):
+    data_dir = os.path.join(os.path.dirname(script_dir), "data")
+    story_path = os.path.join(data_dir, story_type, story_title)
+    images_dir = os.path.join(story_path, "images")
+    if os.path.exists(images_dir):
+        image_files = [f for f in os.listdir(images_dir) if f.endswith(('.png', '.jpg', '.jpeg'))]
+        if image_files:
+            return FileResponse(os.path.join(images_dir, image_files[0]))
+    raise HTTPException(status_code=404, detail="Thumbnail not found")
+
+@app.get("/api/video_file/{story_type}/{story_title}")
+def get_video_file(story_type: str, story_title: str):
+    data_dir = os.path.join(os.path.dirname(script_dir), "data")
+    video_path = os.path.join(data_dir, story_type, story_title, "story_video.mp4")
+    if os.path.exists(video_path):
+        return FileResponse(video_path, media_type="video/mp4")
+    raise HTTPException(status_code=404, detail="Video not found")
 def get_status(job_id: str):
     if job_id not in jobs:
         raise HTTPException(status_code=404, detail="Job not found")

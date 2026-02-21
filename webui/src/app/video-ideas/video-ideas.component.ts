@@ -20,9 +20,12 @@ import { HttpClient } from '@angular/common/http';
           <span class="char-count">{{prompt.length}}/20000</span>
 
           <div class="suggestions-slider">
-            <button class="suggestion-pill" (click)="prompt = 'Write a story about Sleeping Beauty'">👑 Write a story about Sleeping Beauty</button>
-            <button class="suggestion-pill" (click)="prompt = 'Write a story about Noah\'s Ark'">⛵ Write a story about Noah's Ark</button>
-            <button class="suggestion-pill" (click)="prompt = 'Create a documentary about ancient Rome'">🏛️ Create a documentary about ancient Rome</button>
+            <button 
+              class="suggestion-pill" 
+              *ngFor="let s of suggestions" 
+              (click)="setPrompt(s.text)">
+              {{s.icon}} {{s.text}}
+            </button>
           </div>
 
           <div class="controls-row">
@@ -208,6 +211,12 @@ export class VideoIdeasComponent implements OnInit {
   ideas: string[] = [];
   isGenerating = false;
 
+  suggestions = [
+    { icon: '👑', text: "Write a story about Sleeping Beauty" },
+    { icon: '⛵', text: "Write a story about Noah's Ark" },
+    { icon: '🏛️', text: "Create a documentary about ancient Rome" }
+  ];
+
   availableLanguages: string[] = ['English', 'Bahasa Indonesia'];
   availableTones: string[] = ['Neutral', 'Professional', 'Humorous'];
 
@@ -220,6 +229,10 @@ export class VideoIdeasComponent implements OnInit {
     this.fetchConfig();
   }
 
+  setPrompt(text: string) {
+    this.prompt = text;
+  }
+
   fetchConfig() {
     this.http.get<any>('http://localhost:8000/api/config').subscribe({
       next: (config) => {
@@ -227,6 +240,7 @@ export class VideoIdeasComponent implements OnInit {
         this.availableTones = config.tones || ['Neutral', 'Professional', 'Humorous'];
         if (this.availableLanguages.length > 0) this.selectedLanguage = this.availableLanguages[0];
         if (this.availableTones.length > 0) this.selectedTone = this.availableTones[0];
+        this.ideas = []; // Clear the ideas array
       },
       error: (err) => console.error('Failed to fetch config', err)
     });

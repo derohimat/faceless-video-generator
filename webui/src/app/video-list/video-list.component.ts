@@ -1,4 +1,5 @@
-import { Component } from '@angular/core';
+import { Component, OnInit } from '@angular/core';
+import { HttpClient } from '@angular/common/http';
 
 @Component({
   selector: 'app-video-list',
@@ -7,7 +8,7 @@ import { Component } from '@angular/core';
       <header class="page-header">
         <div class="title-area">
           <h1>Video list</h1>
-          <span class="badge" *ngIf="videos.length === 0">No Videos left</span>
+          <span class="badge" *ngIf="videos.length === 0">No Videos</span>
         </div>
         
         <div class="header-actions">
@@ -17,11 +18,16 @@ import { Component } from '@angular/core';
       </header>
 
       <div class="content-wrapper">
-        <div class="videos-grid" *ngIf="videos.length > 0">
+        <div class="loading-state" *ngIf="isLoading">
+           <p>Loading your videos...</p>
+        </div>
+
+        <div class="videos-grid" *ngIf="!isLoading && videos.length > 0">
           <div class="video-card" *ngFor="let video of videos">
-            <div class="thumbnail-wrapper">
-              <img [src]="video.thumbnail" alt="Video Thumbnail">
-              <span class="duration">⏱ {{video.duration}}</span>
+            <div class="thumbnail-wrapper" (click)="playVideo(video)">
+              <img [src]="'http://localhost:8000/' + video.thumbnail" alt="Video Thumbnail" *ngIf="video.thumbnail">
+              <div class="no-thumb" *ngIf="!video.thumbnail">🎬</div>
+              <div class="play-overlay">▶</div>
             </div>
             
             <div class="video-info">
@@ -35,9 +41,19 @@ import { Component } from '@angular/core';
           </div>
         </div>
 
-        <div class="empty-state" *ngIf="videos.length === 0">
-          <p>You haven't created any videos yet.</p>
+        <div class="empty-state" *ngIf="!isLoading && videos.length === 0">
+          <div class="empty-icon">📂</div>
+          <p>You haven't generated any videos yet.</p>
+          <button class="btn-primary" routerLink="/create">Start Creating</button>
         </div>
+      </div>
+
+      <!-- Simple Video Modal -->
+      <div class="video-modal" *ngIf="playingVideo" (click)="playingVideo = null">
+         <div class="modal-content" (click)="$event.stopPropagation()">
+            <video [src]="'http://localhost:8000/' + playingVideo.video_url" controls autoplay></video>
+            <button class="close-modal" (click)="playingVideo = null">×</button>
+         </div>
       </div>
     </div>
   `,
@@ -66,9 +82,9 @@ import { Component } from '@angular/core';
       font-weight: 700;
     }
     .badge {
-      background: rgba(239, 68, 68, 0.1);
-      color: var(--danger-color);
-      border: 1px solid rgba(239, 68, 68, 0.3);
+      background: rgba(255, 255, 255, 0.05);
+      color: var(--text-muted);
+      border: 1px solid var(--border-color);
       padding: 0.25rem 0.75rem;
       border-radius: 20px;
       font-size: 0.75rem;
@@ -116,8 +132,9 @@ import { Component } from '@angular/core';
     .thumbnail-wrapper {
       position: relative;
       width: 100%;
-      padding-top: 177%; /* 9:16 Aspect ratio approximately */
+      padding-top: 177%; /* 9:16 Aspect ratio */
       background: #111;
+      cursor: pointer;
     }
     .thumbnail-wrapper img {
       position: absolute;
@@ -127,17 +144,34 @@ import { Component } from '@angular/core';
       height: 100%;
       object-fit: cover;
     }
-    .duration {
+    .no-thumb {
       position: absolute;
-      bottom: 0.5rem;
-      right: 0.5rem;
-      background: rgba(0,0,0,0.7);
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      font-size: 3rem;
+      opacity: 0.3;
+    }
+    .play-overlay {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      width: 50px;
+      height: 50px;
+      background: rgba(108, 92, 231, 0.8);
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.5rem;
       color: white;
-      padding: 0.25rem 0.5rem;
-      border-radius: var(--radius-sm);
-      font-size: 0.75rem;
-      font-weight: 500;
-      backdrop-filter: blur(4px);
+      opacity: 0;
+      transition: opacity 0.2s, transform 0.2s;
+    }
+    .video-card:hover .play-overlay {
+      opacity: 1;
+      transform: translate(-50%, -50%) scale(1.1);
     }
 
     .video-info {
@@ -164,10 +198,6 @@ import { Component } from '@angular/core';
       cursor: pointer;
       font-size: 1rem;
       opacity: 0.5;
-      transition: opacity 0.2s;
-    }
-    .video-card:hover .delete-btn {
-      opacity: 1;
     }
 
     .video-meta {
@@ -181,15 +211,79 @@ import { Component } from '@angular/core';
       padding: 4rem 2rem;
       color: var(--text-muted);
     }
+    .empty-icon {
+      font-size: 4rem;
+      margin-bottom: 1rem;
+      opacity: 0.2;
+    }
+
+    .video-modal {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0,0,0,0.9);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 1000;
+      backdrop-filter: blur(10px);
+    }
+    .modal-content {
+      position: relative;
+      width: 90%;
+      max-width: 400px;
+      aspect-ratio: 9/16;
+      background: black;
+      border-radius: var(--radius-lg);
+      overflow: hidden;
+    }
+    .modal-content video {
+      width: 100%;
+      height: 100%;
+    }
+    .close-modal {
+      position: absolute;
+      top: 1rem;
+      right: 1rem;
+      background: rgba(255,255,255,0.2);
+      border: none;
+      color: white;
+      width: 30px;
+      height: 30px;
+      border-radius: 50%;
+      font-size: 1.5rem;
+      cursor: pointer;
+    }
   `]
 })
-export class VideoListComponent {
-  videos = [
-    {
-      title: 'How AI Will Change Our Daily Lives',
-      thumbnail: 'https://source.unsplash.com/random/400x711/?cyberpunk,city',
-      duration: '00:28',
-      date: 'Feb 21, 2026'
-    }
-  ];
+export class VideoListComponent implements OnInit {
+  videos: any[] = [];
+  isLoading = true;
+  playingVideo: any = null;
+
+  constructor(private http: HttpClient) { }
+
+  ngOnInit() {
+    this.fetchVideos();
+  }
+
+  fetchVideos() {
+    this.isLoading = true;
+    this.http.get<any>('http://localhost:8000/api/videos').subscribe({
+      next: (res) => {
+        this.videos = res.videos;
+        this.isLoading = false;
+      },
+      error: (err) => {
+        console.error('Failed to fetch videos', err);
+        this.isLoading = false;
+      }
+    });
+  }
+
+  playVideo(video: any) {
+    this.playingVideo = video;
+  }
 }
