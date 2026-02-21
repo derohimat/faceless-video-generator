@@ -87,7 +87,7 @@ import { Router } from '@angular/router';
                  [class.selected]="selectedVoice === voice"
                  (click)="selectedVoice = voice">
               <div class="voice-name">{{voice}}</div>
-              <button class="play-btn">▶</button>
+                <button class="play-btn" (click)="$event.stopPropagation(); previewVoice(voice)">▶</button>
               <div *ngIf="selectedVoice === voice" class="check-badge">✓</div>
             </div>
           </div>
@@ -610,5 +610,15 @@ export class VideoCreationComponent implements OnInit {
         }
       });
     }, 2000);
+  }
+
+  previewVoice(voice: string) {
+    const audio = new Audio();
+    audio.src = `assets/voices/${voice.toLowerCase()}.mp3`;
+    audio.load();
+    audio.play().catch(err => {
+      console.error('Audio preview failed:', err);
+      alert('Could not play audio preview. Please make sure the voice assets are generated.');
+    });
   }
 }
