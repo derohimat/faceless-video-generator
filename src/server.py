@@ -163,9 +163,8 @@ def run_generation_job(job_id: str, request: GenerateRequest):
 @app.get("/api/config")
 def get_config():
     return {
-        "storyTypes": STORY_TYPES,
-        "imageStyles": IMAGE_STYLES,
-        "voices": VOICES
+        "image_styles": ["photorealistic", "cinematic", "anime", "comic", "pixar art"],
+        "voices": ["alloy", "echo", "fable", "onyx", "nova", "shimmer"]
     }
 
 @app.post("/api/generate")

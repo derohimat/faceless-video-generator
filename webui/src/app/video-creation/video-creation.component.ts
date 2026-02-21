@@ -98,7 +98,7 @@ import { Router } from '@angular/router';
                  class="style-card" 
                  [class.selected]="selectedStyle === style"
                  (click)="selectedStyle = style">
-              <img [src]="'https://source.unsplash.com/random/200x300/?' + style" alt="Style preview">
+              <img [src]="'assets/styles/' + style.toLowerCase() + '.png'" alt="Style preview">
               <div class="style-name">{{style}}</div>
               <div *ngIf="selectedStyle === style" class="check-badge">✓</div>
             </div>
@@ -489,7 +489,7 @@ export class VideoCreationComponent implements OnInit {
   fetchConfig() {
     this.http.get<any>('http://localhost:8000/api/config').subscribe({
       next: (config) => {
-        this.availableStyles = config.image_styles || ['anime', 'comic', 'cinematic'];
+        this.availableStyles = config.image_styles || ['photorealistic', 'cinematic', 'anime', 'comic', 'pixar art'];
         this.availableVoices = config.voices || ['alloy', 'echo', 'fable'];
         if (this.availableVoices.length > 0) this.selectedVoice = this.availableVoices[0];
         if (this.availableStyles.length > 0) this.selectedStyle = this.availableStyles[0];
@@ -497,9 +497,9 @@ export class VideoCreationComponent implements OnInit {
       error: (err) => {
         console.error('Failed to fetch config', err);
         // Fallback mock data
-        this.availableStyles = ['Default', 'Pixar Art', 'Anime', 'Comic', 'Lego', 'Cinematic'];
+        this.availableStyles = ['Photorealistic', 'Cinematic', 'Anime', 'Comic', 'Pixar Art'];
         this.availableVoices = ['Radiant Girl', 'Magnetic Voiced Man', 'Compelling Lady'];
-        this.selectedStyle = 'Default';
+        this.selectedStyle = 'Photorealistic';
         this.selectedVoice = 'Radiant Girl';
       }
     });
