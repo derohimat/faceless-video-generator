@@ -164,7 +164,7 @@ def generate_story_and_title(client, story_type: str) -> Tuple[str, str, str]:
             content = parts[2].strip()
             
             # Ensure the first hashtag is from the STORY_TYPE_HASHTAGS mapping
-            first_hashtag = STORY_TYPE_HASHTAGS[story_type]
+            first_hashtag = STORY_TYPE_HASHTAGS.get(story_type, "#video")
             
             # Split the description into text and hashtags
             desc_parts = description.split('#', 1)

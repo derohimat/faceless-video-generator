@@ -209,6 +209,7 @@ def generate_script(request: ScriptRequest):
         
         return storyboard_project
     except Exception as e:
+        traceback.print_exc()
         raise HTTPException(status_code=500, detail=str(e))
 
 def run_video_from_script_job(job_id: str, request: VideoFromScriptRequest):
