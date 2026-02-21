@@ -85,15 +85,13 @@ def replicate_flux_api(prompt: str, max_retries: int = 3) -> Optional[bytes]:
         except Exception as e:
             if attempt < max_retries - 1:
                 print(
-                    f"Error in Flux Schnell generation (attempt {
-                        attempt + 1}/{max_retries}): {e}"
+                    f"Error in Flux Schnell generation (attempt {attempt + 1}/{max_retries}): {e}"
                 )
                 print("Retrying...")
                 time.sleep(1)  # Wait for 1 second before retrying
             else:
                 print(
-                    f"Error in Flux Schnell generation after {
-                        max_retries} attempts: {e}"
+                    f"Error in Flux Schnell generation after {max_retries} attempts: {e}"
                 )
     return None
 
