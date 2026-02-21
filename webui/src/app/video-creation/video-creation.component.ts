@@ -37,11 +37,15 @@ import { Router } from '@angular/router';
           <div class="controls-row">
             <div class="control-group">
               <label class="input-label">Output language</label>
-              <select><option>English</option></select>
+              <select [(ngModel)]="selectedLanguage">
+                <option *ngFor="let lang of availableLanguages" [value]="lang">{{lang}}</option>
+              </select>
             </div>
             <div class="control-group">
               <label class="input-label">Tone</label>
-              <select><option>Neutral</option></select>
+              <select [(ngModel)]="selectedTone">
+                <option *ngFor="let tone of availableTones" [value]="tone">{{tone}}</option>
+              </select>
             </div>
             <div class="control-group slider-group">
               <label class="input-label">Video Scenes ({{sceneCount}}) <span class="help-icon">?</span></label>
@@ -469,9 +473,13 @@ export class VideoCreationComponent implements OnInit {
   storyboardProject: any = null;
   isGeneratingScript = false;
 
+  availableLanguages: string[] = [];
+  availableTones: string[] = [];
   availableVoices: string[] = [];
   availableStyles: string[] = [];
 
+  selectedLanguage = 'English';
+  selectedTone = 'Neutral';
   selectedVoice = '';
   selectedStyle = '';
   aspectRatio = '9:16';
@@ -490,17 +498,27 @@ export class VideoCreationComponent implements OnInit {
     this.http.get<any>('http://localhost:8000/api/config').subscribe({
       next: (config) => {
         this.availableStyles = config.image_styles || ['photorealistic', 'cinematic', 'anime', 'comic', 'pixar art'];
-        this.availableVoices = config.voices || ['alloy', 'echo', 'fable'];
+        this.availableVoices = config.voices || ['alloy', 'echo', 'fable', 'onyx', 'nova', 'shimmer'];
+        this.availableLanguages = config.languages || ['English', 'Bahasa Indonesia'];
+        this.availableTones = config.tones || ['Neutral', 'Professional', 'Humorous'];
+
         if (this.availableVoices.length > 0) this.selectedVoice = this.availableVoices[0];
         if (this.availableStyles.length > 0) this.selectedStyle = this.availableStyles[0];
+        if (this.availableLanguages.length > 0) this.selectedLanguage = this.availableLanguages[0];
+        if (this.availableTones.length > 0) this.selectedTone = this.availableTones[0];
       },
       error: (err) => {
         console.error('Failed to fetch config', err);
         // Fallback mock data
         this.availableStyles = ['Photorealistic', 'Cinematic', 'Anime', 'Comic', 'Pixar Art'];
         this.availableVoices = ['Radiant Girl', 'Magnetic Voiced Man', 'Compelling Lady'];
+        this.availableLanguages = ['English', 'Bahasa Indonesia'];
+        this.availableTones = ['Neutral', 'Professional', 'Humorous'];
+
         this.selectedStyle = 'Photorealistic';
         this.selectedVoice = 'Radiant Girl';
+        this.selectedLanguage = 'English';
+        this.selectedTone = 'Neutral';
       }
     });
   }
@@ -515,7 +533,9 @@ export class VideoCreationComponent implements OnInit {
     this.statusMessage = 'Generating script and scenes...';
 
     const payload = {
-      story_type: this.prompt
+      story_type: this.prompt,
+      language: this.selectedLanguage,
+      tone: this.selectedTone
     };
 
     this.http.post<any>('http://localhost:8000/api/script', payload).subscribe({

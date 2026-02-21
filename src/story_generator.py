@@ -129,11 +129,12 @@ def create_story_prompt(story_type: str, char_limit: Tuple[int, int]) -> str:
     return base_prompt
 
 
-def generate_story_and_title(client, story_type: str) -> Tuple[str, str, str]:
+def generate_story_and_title(client, story_type: str, language: str = "English", tone: str = "Neutral") -> Tuple[str, str, str]:
     config = load_config()
     char_limit = (config['story_generation']['char_limit_min'], config['story_generation']['char_limit_max'])
 
     prompt = create_story_prompt(story_type, char_limit)
+    prompt += f"\n\nOutput Language: {language}\nTone: {tone}\n"
 
     messages = [
         {
@@ -147,10 +148,10 @@ def generate_story_and_title(client, story_type: str) -> Tuple[str, str, str]:
 
             You excel at following specific guidelines while maintaining creativity and relevance in your content creation.
 
-            When creating titles:
-            - Make them attractive and attention-grabbing
-            - Ensure they are unique and avoid repetition
-            - Capture the essence of the content while piquing curiosity'''
+            - Capturing the essence of the content while piquing curiosity
+            
+            IMPORTANT: Write EVERYTHING (Title, Description, and Content) in the specified language: {language}.
+            The Tone of the writing should be: {tone}.'''
         },
         {"role": "user", "content": prompt},
     ]
@@ -256,7 +257,7 @@ def generate_characters(client, story: str) -> List[Dict[str, str]]:
             return []
 
 
-def generate_storyboard(client, title: str, story: str, story_type: str, character_names: List[str] = None) -> Dict[str, Any]:
+def generate_storyboard(client, title: str, story: str, story_type: str, character_names: List[str] = None, language: str = "English", tone: str = "Neutral") -> Dict[str, Any]:
     config = load_config()
     max_scenes = config['storyboard']['max_scenes']
     timestamp = datetime.now().strftime("%Y-%m-%d %I:%M:%S %p")
@@ -298,7 +299,7 @@ def generate_storyboard(client, title: str, story: str, story_type: str, charact
         """,
     }
     
-    prompt = f"""Based on the following {story_type}, create a detailed storyboard with up to {max_scenes} scenes.
+    prompt = f"""Based on the following {story_type}, create a detailed storyboard with up to {max_scenes} scenes in the specified language: {language}.
 
         Title: {title}
         {"Character full Names: " + ', '.join(character_names) if character_names else ""}
@@ -335,6 +336,7 @@ def generate_storyboard(client, title: str, story: str, story_type: str, charact
         - Zoom-out: Use to reveal context, end a scene, or show isolation. Examples: showing a character in a larger environment, concluding a sequence, or transitioning from a detail to a wider view.
 
         Important rules:
+        0. EVERYTHING (Scene Description and Subtitles) must be written in {language}.
         1. Do not use zoom-in transitions when the current scene's shot size is close-up or extreme close-up.
         2. For transitions, use ONLY the following types:
             - zoom-in
@@ -405,14 +407,14 @@ def generate_storyboard(client, title: str, story: str, story_type: str, charact
         logging.error(f"Full response: {response}")
         return create_empty_storyboard(title)
 
-def generate_general_storyboard(client, title: str, story: str, character_names: List[str]) -> Dict[str, Any]:
-    return generate_storyboard(client, title, story, "general", character_names)
+def generate_general_storyboard(client, title: str, story: str, character_names: List[str], language: str = "English", tone: str = "Neutral") -> Dict[str, Any]:
+    return generate_storyboard(client, title, story, "general", character_names, language, tone)
 
-def generate_philosophy_storyboard(client, title: str, story: str, character_names: List[str]) -> Dict[str, Any]:
-    return generate_storyboard(client, title, story, "philosophy", character_names)
+def generate_philosophy_storyboard(client, title: str, story: str, character_names: List[str], language: str = "English", tone: str = "Neutral") -> Dict[str, Any]:
+    return generate_storyboard(client, title, story, "philosophy", character_names, language, tone)
 
-def generate_fun_facts_storyboard(client, title: str, story: str) -> Dict[str, Any]:
-    return generate_storyboard(client, title, story, "fun facts")
+def generate_fun_facts_storyboard(client, title: str, story: str, language: str = "English", tone: str = "Neutral") -> Dict[str, Any]:
+    return generate_storyboard(client, title, story, "fun facts", language=language, tone=tone)
 
-def generate_life_pro_tips_storyboard(client, title: str, story: str) -> Dict[str, Any]:
-    return generate_storyboard(client, title, story, "life pro tips")
+def generate_life_pro_tips_storyboard(client, title: str, story: str, language: str = "English", tone: str = "Neutral") -> Dict[str, Any]:
+    return generate_storyboard(client, title, story, "life pro tips", language=language, tone=tone)

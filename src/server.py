@@ -67,12 +67,16 @@ class GenerateRequest(BaseModel):
 
 class ScriptRequest(BaseModel):
     story_type: str
+    language: str = "English"
+    tone: str = "Neutral"
 
 class VideoFromScriptRequest(BaseModel):
     storyboard_project: dict
     image_style: str
     voice_name: str
     story_type: str
+    language: str = "English"
+    tone: str = "Neutral"
 
 def update_job_status(job_id: str, status: str, step: str = None, error: str = None):
     jobs[job_id]["status"] = status
@@ -164,7 +168,9 @@ def run_generation_job(job_id: str, request: GenerateRequest):
 def get_config():
     return {
         "image_styles": ["photorealistic", "cinematic", "anime", "comic", "pixar art"],
-        "voices": ["alloy", "echo", "fable", "onyx", "nova", "shimmer"]
+        "voices": ["alloy", "echo", "fable", "onyx", "nova", "shimmer"],
+        "languages": ["English", "Bahasa Indonesia", "Spanish", "French", "German", "Japanese", "Hindi"],
+        "tones": ["Neutral", "Professional", "Humorous", "Dramatic", "Educational", "Inspirational"]
     }
 
 @app.post("/api/generate")
@@ -184,7 +190,12 @@ def generate_video(request: GenerateRequest, background_tasks: BackgroundTasks):
 @app.post("/api/script")
 def generate_script(request: ScriptRequest):
     try:
-        title, description, story = generate_story_and_title(client, request.story_type)
+        title, description, story = generate_story_and_title(
+            client, 
+            request.story_type, 
+            language=request.language, 
+            tone=request.tone
+        )
         if story is None or title is None:
             raise HTTPException(status_code=500, detail="Failed to generate story")
         
@@ -195,13 +206,13 @@ def generate_script(request: ScriptRequest):
         character_names = [char["name"] for char in characters] if characters else []
         
         if request.story_type.lower() == "life pro tips":
-            storyboard_project = generate_life_pro_tips_storyboard(client, title, story)
+            storyboard_project = generate_life_pro_tips_storyboard(client, title, story, language=request.language, tone=request.tone)
         elif request.story_type.lower() == "philosophy":
-            storyboard_project = generate_philosophy_storyboard(client, title, story, character_names)
+            storyboard_project = generate_philosophy_storyboard(client, title, story, character_names, language=request.language, tone=request.tone)
         elif request.story_type.lower() == "fun facts":
-            storyboard_project = generate_fun_facts_storyboard(client, title, story)
+            storyboard_project = generate_fun_facts_storyboard(client, title, story, language=request.language, tone=request.tone)
         else:
-            storyboard_project = generate_general_storyboard(client, title, story, character_names)
+            storyboard_project = generate_general_storyboard(client, title, story, character_names, language=request.language, tone=request.tone)
         
         storyboard_project["characters"] = characters
         storyboard_project["description"] = description
