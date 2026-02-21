@@ -1,0 +1,140 @@
+/* You can add global styles to this file, and also import other style files */
+
+:root {
+  /* Color Palette based on Reference UI */
+  --bg-main: #0B0E14;
+  /* Deepest background for main content area */
+  --bg-sidebar: #121620;
+  /* Slightly lighter for sidebar and cards */
+  --bg-card: #1A1F2D;
+  /* Panels and cards inside main content */
+  --bg-input: #232938;
+  /* Input fields and unselected toggles */
+
+  --primary-accent: #6C5CE7;
+  /* The distinct purple-blue accent for buttons */
+  --primary-hover: #5A4AD1;
+  --secondary-accent: #FEB63E;
+  /* Golden yellow for "Upgrade" */
+
+  --text-primary: #FFFFFF;
+  --text-secondary: #94A3B8;
+  /* Gray text for labels and inactive elements */
+  --text-muted: #64748B;
+
+  --border-color: #2D3343;
+  /* Subtle borders between sections */
+  --danger-color: #EF4444;
+  /* Red for delete actions/errors */
+
+  --radius-sm: 6px;
+  --radius-md: 12px;
+  --radius-lg: 18px;
+  --radius-xl: 24px;
+}
+
+body {
+  margin: 0;
+  font-family: 'Outfit', 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  background-color: var(--bg-main);
+  color: var(--text-primary);
+  -webkit-font-smoothing: antialiased;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+/* Typography elements */
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+  margin: 0 0 1rem 0;
+  font-weight: 600;
+}
+
+h2 {
+  font-size: 1.5rem;
+}
+
+p {
+  margin: 0 0 1rem 0;
+}
+
+/* Custom Scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--bg-input);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--text-muted);
+}
+
+/* Form Shared Styles */
+.input-label {
+  display: block;
+  font-size: 0.875rem;
+  color: var(--text-secondary);
+  margin-bottom: 0.5rem;
+  font-weight: 500;
+}
+
+input[type="text"],
+textarea,
+select {
+  width: 100%;
+  background-color: var(--bg-input);
+  border: 1px solid var(--border-color);
+  color: var(--text-primary);
+  border-radius: var(--radius-sm);
+  padding: 0.75rem 1rem;
+  font-family: inherit;
+  font-size: 0.95rem;
+  outline: none;
+  transition: border-color 0.2s;
+}
+
+input[type="text"]:focus,
+textarea:focus,
+select:focus {
+  border-color: var(--primary-accent);
+}
+
+/* Buttons */
+.btn-primary {
+  background-color: var(--primary-accent);
+  color: white;
+  border: none;
+  border-radius: var(--radius-sm);
+  padding: 0.75rem 1.5rem;
+  font-size: 0.95rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background-color 0.2s, transform 0.1s;
+}
+
+.btn-primary:hover {
+  background-color: var(--primary-hover);
+}
+
+.btn-primary:active {
+  transform: scale(0.98);
+}
+
+.btn-primary:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}

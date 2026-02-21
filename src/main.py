@@ -1,4 +1,10 @@
 import os
+import imageio_ffmpeg
+# Add ffmpeg to PATH
+ffmpeg_path = imageio_ffmpeg.get_ffmpeg_exe()
+os.environ["PATH"] += os.pathsep + os.path.dirname(ffmpeg_path)
+# Configure ImageMagick for MoviePy
+os.environ["IMAGEMAGICK_BINARY"] = r"C:\Program Files\ImageMagick-7.1.2-Q16-HDRI\magick.exe"
 import re
 import json
 from dotenv import load_dotenv
