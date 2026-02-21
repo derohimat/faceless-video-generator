@@ -73,6 +73,7 @@ def generate_and_download_images(
                 print(f"Failed to save image for scene {storyboard['scene_number']}: {e}")
                 if i > 0:
                     storyboard['image'] = image_files[-1]  # Use the previous image
+                    image_files.append(image_files[-1])
                 else:
                     # For the first image, create a blank image
                     create_blank_image(image_filename)
@@ -82,6 +83,7 @@ def generate_and_download_images(
             print(f"Failed to generate image for scene {storyboard['scene_number']}")
             if i > 0:
                 storyboard['image'] = image_files[-1]  # Use the previous image
+                image_files.append(image_files[-1])
             else:
                 # For the first image, create a blank image
                 image_filename = os.path.join(story_dir, f"scene_{storyboard['scene_number']}.png")

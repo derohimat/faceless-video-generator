@@ -3,6 +3,7 @@ import replicate
 import os
 from typing import Optional, Dict, Any
 import time
+import re
 from utils import load_config
 import fal_client
 
@@ -87,8 +88,19 @@ def replicate_flux_api(prompt: str, max_retries: int = 3) -> Optional[bytes]:
                 print(
                     f"Error in Flux Schnell generation (attempt {attempt + 1}/{max_retries}): {e}"
                 )
-                print("Retrying...")
-                time.sleep(1)  # Wait for 1 second before retrying
+                error_str = str(e)
+                if "status: 402" in error_str or "Insufficient credit" in error_str:
+                    print("Insufficient credit. Aborting retries.")
+                    break
+                
+                match = re.search(r"resets in ~?(\d+)s", error_str)
+                if match:
+                    wait_time = int(match.group(1)) + 1
+                    print(f"Rate limited. Waiting for {wait_time} seconds...")
+                    time.sleep(wait_time)
+                else:
+                    print("Retrying...")
+                    time.sleep(1)
             else:
                 print(
                     f"Error in Flux Schnell generation after {max_retries} attempts: {e}"
