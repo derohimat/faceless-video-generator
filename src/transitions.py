@@ -6,17 +6,6 @@ import numpy
 import cv2
 
 
-def fade(clip, duration=1, type="both"):
-    if type == "in":
-        return clip.fadein(duration)
-    elif type == "out":
-        return clip.fadeout(duration)
-    elif type == "both":
-        return clip.fadein(duration).fadeout(duration)
-    else:
-        raise ValueError("type must be 'in', 'out', or 'both'")
-
-
 def shake(clip, effect_duration=1, max_offset=5):
     def shake_effect(get_frame, t):
         frame = get_frame(t)
@@ -64,18 +53,29 @@ def zoom(clip, mode="in", position="center", speed=3):
         extra_zoom = max(w / (w - 2), h / (h - 2))
         zoom *= extra_zoom
 
-        positions = {
-            "center": [(w - (w / zoom)) / 2, (h - (h / zoom)) / 2],
-            "left": [0, (h - (h / zoom)) / 2],
-            "right": [w - (w / zoom), (h - (h / zoom)) / 2],
-            "top": [(w - (w / zoom)) / 2, 0],
-            "topleft": [0, 0],
-            "topright": [w - (w / zoom), 0],
-            "bottom": [(w - (w / zoom)) / 2, h - (h / zoom)],
-            "bottomleft": [0, h - (h / zoom)],
-            "bottomright": [w - (w / zoom), h - (h / zoom)],
-        }
-        tx, ty = positions[position]
+        dw = w - (w / zoom)
+        dh = h - (h / zoom)
+
+        if position == "center":
+            tx, ty = dw / 2, dh / 2
+        elif position == "left":
+            tx, ty = 0, dh / 2
+        elif position == "right":
+            tx, ty = dw, dh / 2
+        elif position == "top":
+            tx, ty = dw / 2, 0
+        elif position == "topleft":
+            tx, ty = 0, 0
+        elif position == "topright":
+            tx, ty = dw, 0
+        elif position == "bottom":
+            tx, ty = dw / 2, dh
+        elif position == "bottomleft":
+            tx, ty = 0, dh
+        elif position == "bottomright":
+            tx, ty = dw, dh
+        else:
+            tx, ty = dw / 2, dh / 2  # default to center
         M = np.array([[zoom, 0, -tx * zoom], [0, zoom, -ty * zoom]])
         frame = cv2.warpAffine(frame, M, (w, h))
         return frame
