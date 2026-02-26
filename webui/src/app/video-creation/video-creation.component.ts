@@ -32,8 +32,7 @@ import { Router, ActivatedRoute } from '@angular/router';
           </div>
 
           <div class="suggestions">
-            <button class="suggestion-pill">🤖 How AI will change our daily lives in the next 10 years</button>
-            <button class="suggestion-pill">🌊 Exploring the mysterious depths of the ocean and its creatures</button>
+            <button class="suggestion-pill" *ngFor="let sug of suggestions" (click)="applySuggestion(sug)">{{sug}}</button>
           </div>
 
           <div class="controls-row">
@@ -511,6 +510,19 @@ export class VideoCreationComponent implements OnInit {
   sceneCount = 5;
   quickPace = false;
   scenes: any[] = [];
+
+  // Dynamic quick suggestions based on user niche (placeholder examples)
+  suggestions: string[] = [
+    '🚀 5 TikTok video ideas to go viral this week',
+    '💡 How to leverage AI for personal branding',
+    '🌍 Sustainable travel hacks for eco‑friendly influencers',
+    '🎮 Gaming trends that will dominate 2026',
+    '🧠 Mind‑blowing psychology facts for short reels'
+  ];
+
+  applySuggestion(sug: string) {
+    this.prompt = sug;
+  }
   storyboardProject: any = null;
   isGeneratingScript = false;
 
