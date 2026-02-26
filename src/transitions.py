@@ -6,17 +6,6 @@ import numpy
 import cv2
 
 
-def fade(clip, duration=1, type="both"):
-    if type == "in":
-        return clip.fadein(duration)
-    elif type == "out":
-        return clip.fadeout(duration)
-    elif type == "both":
-        return clip.fadein(duration).fadeout(duration)
-    else:
-        raise ValueError("type must be 'in', 'out', or 'both'")
-
-
 def shake(clip, effect_duration=1, max_offset=5):
     def shake_effect(get_frame, t):
         frame = get_frame(t)
