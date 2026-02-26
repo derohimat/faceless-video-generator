@@ -13,7 +13,7 @@ def generate_image(
     image_generator_func: Callable[[str], Optional[bytes]]
 ) -> Optional[bytes]:
     # Construct the prompt
-    prompt = storyboard['description']
+    prompt = storyboard.get('description') or storyboard.get('subtitles') or ""
     
     enhanced_prompt = f"{prompt} | {style}"
     

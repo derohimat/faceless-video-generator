@@ -257,9 +257,10 @@ def generate_characters(client, story: str) -> List[Dict[str, str]]:
             return []
 
 
-def generate_storyboard(client, title: str, story: str, story_type: str, character_names: List[str] = None, language: str = "English", tone: str = "Neutral") -> Dict[str, Any]:
+def generate_storyboard(client, title: str, story: str, story_type: str, character_names: List[str] = None, language: str = "English", tone: str = "Neutral", max_scenes: int = None) -> Dict[str, Any]:
     config = load_config()
-    max_scenes = config['storyboard']['max_scenes']
+    if max_scenes is None:
+        max_scenes = config['storyboard']['max_scenes']
     timestamp = datetime.now().strftime("%Y-%m-%d %I:%M:%S %p")
     
     # define type-specific guidelines
@@ -407,17 +408,17 @@ def generate_storyboard(client, title: str, story: str, story_type: str, charact
         logging.error(f"Full response: {response}")
         return create_empty_storyboard(title)
 
-def generate_general_storyboard(client, title: str, story: str, character_names: List[str], language: str = "English", tone: str = "Neutral") -> Dict[str, Any]:
-    return generate_storyboard(client, title, story, "general", character_names, language, tone)
+def generate_general_storyboard(client, title: str, story: str, character_names: List[str], language: str = "English", tone: str = "Neutral", max_scenes: int = None) -> Dict[str, Any]:
+    return generate_storyboard(client, title, story, "general", character_names, language, tone, max_scenes)
 
-def generate_philosophy_storyboard(client, title: str, story: str, character_names: List[str], language: str = "English", tone: str = "Neutral") -> Dict[str, Any]:
-    return generate_storyboard(client, title, story, "philosophy", character_names, language, tone)
+def generate_philosophy_storyboard(client, title: str, story: str, character_names: List[str], language: str = "English", tone: str = "Neutral", max_scenes: int = None) -> Dict[str, Any]:
+    return generate_storyboard(client, title, story, "philosophy", character_names, language, tone, max_scenes)
 
-def generate_fun_facts_storyboard(client, title: str, story: str, language: str = "English", tone: str = "Neutral") -> Dict[str, Any]:
-    return generate_storyboard(client, title, story, "fun facts", language=language, tone=tone)
+def generate_fun_facts_storyboard(client, title: str, story: str, language: str = "English", tone: str = "Neutral", max_scenes: int = None) -> Dict[str, Any]:
+    return generate_storyboard(client, title, story, "fun facts", language=language, tone=tone, max_scenes=max_scenes)
 
-def generate_life_pro_tips_storyboard(client, title: str, story: str, language: str = "English", tone: str = "Neutral") -> Dict[str, Any]:
-    return generate_storyboard(client, title, story, "life pro tips", language=language, tone=tone)
+def generate_life_pro_tips_storyboard(client, title: str, story: str, language: str = "English", tone: str = "Neutral", max_scenes: int = None) -> Dict[str, Any]:
+    return generate_storyboard(client, title, story, "life pro tips", language=language, tone=tone, max_scenes=max_scenes)
 
 def generate_video_ideas(client, prompt: str, language: str = "English", tone: str = "Neutral") -> List[str]:
     messages = [

@@ -1,6 +1,6 @@
 import { Component, OnInit } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
-import { Router } from '@angular/router';
+import { Router, ActivatedRoute } from '@angular/router';
 
 @Component({
   selector: 'app-video-creation',
@@ -24,7 +24,9 @@ import { Router } from '@angular/router';
               <button class="btn-micro" (click)="generateScript()" [disabled]="isGeneratingScript">
                 <span class="icon">✨</span> {{ isGeneratingScript ? 'Generating...' : 'Generate Script' }}
               </button>
-              <button class="btn-micro">Quick pace</button>
+              <button class="btn-micro" [class.active]="quickPace" (click)="quickPace = !quickPace">
+                <span class="icon">⚡</span> Quick pace {{ quickPace ? '(ON)' : '' }}
+              </button>
               <span class="char-count">{{prompt.length}}/20000</span>
             </div>
           </div>
@@ -69,8 +71,15 @@ import { Router } from '@angular/router';
           <div class="scene-list">
             <div *ngFor="let scene of scenes; let i = index" class="scene-item">
               <div class="scene-number">{{i + 1}}</div>
-              <div class="scene-input-wrapper">
-                <input type="text" [(ngModel)]="scene.subtitles" placeholder="Enter scene subtitles...">
+              <div class="scene-input-wrapper vertical">
+                <div class="input-with-label">
+                  <span class="tiny-label">Subtitles</span>
+                  <input type="text" [(ngModel)]="scene.subtitles" placeholder="Enter scene subtitles...">
+                </div>
+                <div class="input-with-label">
+                  <span class="tiny-label">Image Prompt</span>
+                  <textarea [(ngModel)]="scene.description" placeholder="Describe the visual scene..." rows="2"></textarea>
+                </div>
               </div>
               <button class="delete-scene" (click)="removeScene(i)">🗑️</button>
             </div>
@@ -190,23 +199,33 @@ import { Router } from '@angular/router';
     }
     .textarea-footer {
       display: flex;
-      justify-content: space-between;
       align-items: center;
       margin-top: 1rem;
       border-top: 1px solid var(--border-color);
       padding-top: 0.75rem;
+      gap: 0.75rem;
     }
     .btn-micro {
       background: rgba(255,255,255,0.05);
       border: 1px solid var(--border-color);
       color: var(--text-primary);
-      padding: 0.25rem 0.75rem;
+      padding: 0.4rem 0.85rem;
       border-radius: var(--radius-sm);
       font-size: 0.8rem;
       cursor: pointer;
       display: inline-flex;
       align-items: center;
-      gap: 0.25rem;
+      gap: 0.35rem;
+      transition: all 0.2s;
+      white-space: nowrap;
+    }
+    .btn-micro:hover {
+      background: rgba(255,255,255,0.1);
+    }
+    .btn-micro.active {
+      background: rgba(108, 92, 231, 0.15);
+      border-color: var(--primary-accent);
+      color: var(--primary-accent);
     }
     .char-count {
       font-size: 0.75rem;
@@ -290,11 +309,32 @@ import { Router } from '@angular/router';
       font-size: 0.9rem;
       flex-shrink: 0;
     }
-    .scene-input-wrapper {
-      flex: 1;
-      position: relative;
+    .scene-input-wrapper.vertical {
+      flex-direction: column;
+      align-items: stretch;
+      gap: 0.75rem;
+    }
+    .input-with-label {
       display: flex;
-      align-items: center;
+      flex-direction: column;
+      gap: 0.25rem;
+    }
+    .tiny-label {
+      font-size: 0.7rem;
+      text-transform: uppercase;
+      color: var(--text-muted);
+      font-weight: 600;
+      letter-spacing: 0.02em;
+    }
+    .input-with-label textarea {
+      background: var(--bg-input);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-sm);
+      padding: 0.5rem;
+      color: var(--text-primary);
+      font-size: 0.85rem;
+      font-family: inherit;
+      resize: vertical;
     }
     .delete-scene {
       background: transparent;
@@ -469,6 +509,7 @@ export class VideoCreationComponent implements OnInit {
   prompt = '';
   videoTitle = '';
   sceneCount = 5;
+  quickPace = false;
   scenes: any[] = [];
   storyboardProject: any = null;
   isGeneratingScript = false;
@@ -488,10 +529,49 @@ export class VideoCreationComponent implements OnInit {
   statusMessage = '';
   pollInterval: any;
 
-  constructor(private http: HttpClient, private router: Router) { }
+  constructor(
+    private http: HttpClient,
+    private router: Router,
+    private route: ActivatedRoute
+  ) { }
 
   ngOnInit() {
     this.fetchConfig();
+    this.route.queryParams.subscribe(params => {
+      if (params['edit_type'] && params['edit_title']) {
+        this.loadVideoDetails(params['edit_type'], params['edit_title']);
+      } else if (params['topic']) {
+        this.prompt = params['topic'];
+      }
+    });
+  }
+
+  loadVideoDetails(type: string, title: string) {
+    this.isGeneratingScript = true; // Show loading state
+    this.statusMessage = 'Loading video details for editing...';
+
+    this.http.get<any>(`http://localhost:8000/api/video_details/${type}/${title}`).subscribe({
+      next: (res) => {
+        this.storyboardProject = res;
+        this.scenes = res.storyboards;
+        this.videoTitle = res.project_info.title;
+
+        if (res.metadata) {
+          this.prompt = res.metadata.story_type || '';
+          this.selectedLanguage = res.metadata.language || 'English';
+          this.selectedTone = res.metadata.tone || 'Neutral';
+          this.selectedVoice = res.metadata.voice_name || 'alloy';
+          this.selectedStyle = res.metadata.image_style || 'photorealistic';
+        }
+
+        this.isGeneratingScript = false;
+        this.statusMessage = 'Video loaded! You can now edit the script, voice, or style and recreate your video.';
+      },
+      error: (err) => {
+        this.statusMessage = 'Failed to load video details: ' + err.message;
+        this.isGeneratingScript = false;
+      }
+    });
   }
 
   fetchConfig() {
@@ -532,11 +612,16 @@ export class VideoCreationComponent implements OnInit {
     this.isGeneratingScript = true;
     this.statusMessage = 'Generating script and scenes...';
 
-    const payload = {
+    const payload: any = {
       story_type: this.prompt,
       language: this.selectedLanguage,
-      tone: this.selectedTone
+      tone: this.selectedTone,
+      scene_count: this.sceneCount
     };
+
+    if (this.quickPace) {
+      payload.tone = payload.tone + ' - Quick paced, short punchy sentences, fast cuts';
+    }
 
     this.http.post<any>('http://localhost:8000/api/script', payload).subscribe({
       next: (res) => {

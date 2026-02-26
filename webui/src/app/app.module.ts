@@ -9,6 +9,7 @@ import { SidebarComponent } from './sidebar/sidebar.component';
 import { VideoCreationComponent } from './video-creation/video-creation.component';
 import { VideoIdeasComponent } from './video-ideas/video-ideas.component';
 import { VideoListComponent } from './video-list/video-list.component';
+import { VideoEditorComponent } from './video-editor/video-editor.component';
 
 @NgModule({
   declarations: [
@@ -16,7 +17,8 @@ import { VideoListComponent } from './video-list/video-list.component';
     SidebarComponent,
     VideoCreationComponent,
     VideoIdeasComponent,
-    VideoListComponent
+    VideoListComponent,
+    VideoEditorComponent
   ],
   imports: [
     BrowserModule,

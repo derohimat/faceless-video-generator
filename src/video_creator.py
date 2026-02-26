@@ -8,7 +8,7 @@ from moviepy.editor import (
 from audio_generator import generate_audio
 from transitions import zoom
 import os
-import shortcap
+from utils import create_resource_dir, load_config, create_blank_image
 
 script_dir = os.path.dirname(os.path.abspath(__file__))
 font_path = os.path.join(os.path.dirname(script_dir), "font")
@@ -45,13 +45,21 @@ def create_video(client, storyboard_project, output_file, audio_dir, voice_name)
         audio_clip = AudioFileClip(audio_file)
         
         # Create image clip with duration matching the audio
-        image_clip = ImageClip(scene['image']).set_duration(audio_clip.duration)
+        img_path = scene.get('image')
+        if not img_path or not os.path.exists(img_path):
+            print(f"Warning: Image missing for scene {scene['scene_number']}. Creating blank image.")
+            # Use original story_dir for fallback image if needed
+            temp_img = os.path.join(os.path.dirname(audio_dir), f"blank_scene_{scene['scene_number']}.png")
+            create_blank_image(temp_img)
+            img_path = temp_img
+            
+        image_clip = ImageClip(img_path).set_duration(audio_clip.duration)
         
-        # Combine image, text, and audio
+        # Combine image and audio
         video_clip = image_clip.set_audio(audio_clip)
         
         # Apply transition effect
-        transition_type = scene['transition_type']
+        transition_type = scene.get('transition_type', 'none')
             
         if transition_type == 'zoom-in':
             clips.append(zoom(video_clip))

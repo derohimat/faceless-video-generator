@@ -71,6 +71,7 @@ class ScriptRequest(BaseModel):
     story_type: str
     language: str = "English"
     tone: str = "Neutral"
+    scene_count: int = 5
 
 class IdeasRequest(BaseModel):
     prompt: str
@@ -173,11 +174,24 @@ def run_generation_job(job_id: str, request: GenerateRequest):
 
 @app.get("/api/config")
 def get_config():
+    # Attempt to list files in a 'music' directory if it exists
+    music_dir = os.path.join(os.path.dirname(script_dir), "music")
+    music_tracks = []
+    if os.path.exists(music_dir):
+        for f in os.listdir(music_dir):
+            if f.endswith(".mp3"):
+                music_tracks.append({"name": f.replace(".mp3", "").replace("_", " "), "filename": f})
+    
     return {
-        "image_styles": ["photorealistic", "cinematic", "anime", "comic", "pixar art"],
-        "voices": ["alloy", "echo", "fable", "onyx", "nova", "shimmer"],
+        "image_styles": IMAGE_STYLES,
+        "voices": VOICES,
         "languages": ["English", "Bahasa Indonesia", "Spanish", "French", "German", "Japanese", "Hindi"],
-        "tones": ["Neutral", "Professional", "Humorous", "Dramatic", "Educational", "Inspirational"]
+        "tones": ["Neutral", "Professional", "Humorous", "Dramatic", "Educational", "Inspirational"],
+        "music_tracks": music_tracks if music_tracks else [
+            {"name": "Paris Else", "category": "Narrative"},
+            {"name": "Epic Music", "category": "Narrative"},
+            {"name": "Innovation", "category": "Narrative"}
+        ]
     }
 
 @app.post("/api/generate")
@@ -213,13 +227,13 @@ def generate_script(request: ScriptRequest):
         character_names = [char["name"] for char in characters] if characters else []
         
         if request.story_type.lower() == "life pro tips":
-            storyboard_project = generate_life_pro_tips_storyboard(client, title, story, language=request.language, tone=request.tone)
+            storyboard_project = generate_life_pro_tips_storyboard(client, title, story, language=request.language, tone=request.tone, max_scenes=request.scene_count)
         elif request.story_type.lower() == "philosophy":
-            storyboard_project = generate_philosophy_storyboard(client, title, story, character_names, language=request.language, tone=request.tone)
+            storyboard_project = generate_philosophy_storyboard(client, title, story, character_names, language=request.language, tone=request.tone, max_scenes=request.scene_count)
         elif request.story_type.lower() == "fun facts":
-            storyboard_project = generate_fun_facts_storyboard(client, title, story, language=request.language, tone=request.tone)
+            storyboard_project = generate_fun_facts_storyboard(client, title, story, language=request.language, tone=request.tone, max_scenes=request.scene_count)
         else:
-            storyboard_project = generate_general_storyboard(client, title, story, character_names, language=request.language, tone=request.tone)
+            storyboard_project = generate_general_storyboard(client, title, story, character_names, language=request.language, tone=request.tone, max_scenes=request.scene_count)
         
         storyboard_project["characters"] = characters
         storyboard_project["description"] = description
@@ -246,6 +260,14 @@ def run_video_from_script_job(job_id: str, request: VideoFromScriptRequest):
         story_type = request.story_type
         title = storyboard_project["project_info"]["title"]
 
+        storyboard_project["metadata"] = {
+            "image_style": image_style,
+            "voice_name": voice_name,
+            "language": request.language,
+            "tone": request.tone,
+            "story_type": story_type
+        }
+        
         story_dir = create_resource_dir(script_dir, story_type, title)
         
         update_job_status(job_id, "running", step="Generating images for each scene...")
@@ -294,6 +316,7 @@ def list_videos():
     if not os.path.exists(data_dir):
         return {"videos": []}
     
+    print(f"Listing videos in {data_dir}...")
     for story_type in os.listdir(data_dir):
         story_type_path = os.path.join(data_dir, story_type)
         if not os.path.isdir(story_type_path):
@@ -304,24 +327,35 @@ def list_videos():
             if not os.path.isdir(story_path):
                 continue
                 
+            # A valid project must at least have a storyboard file
+            project_file = os.path.join(story_path, "storyboard_project.json")
             video_file = os.path.join(story_path, "story_video.mp4")
-            if os.path.exists(video_file):
+            
+            if os.path.exists(project_file):
                 # Search for any image to use as thumbnail
                 thumbnail = ""
                 images_dir = os.path.join(story_path, "images")
                 if os.path.exists(images_dir):
                     image_files = [f for f in os.listdir(images_dir) if f.endswith(('.png', '.jpg', '.jpeg'))]
                     if image_files:
-                        # Return relative path or placeholder for now
                         thumbnail = f"api/thumbnail/{story_type}/{story_title}"
+                elif os.path.exists(os.path.join(story_path, "scene_1.png")):
+                    # Fallback for older style structure
+                    thumbnail = f"api/thumbnail/{story_type}/{story_title}"
                 
-                video_list.append({
+                # Use project file creation time if video is missing
+                file_for_date = video_file if os.path.exists(video_file) else project_file
+                
+                entry = {
+                    "video_id": story_title,
                     "title": story_title.replace("_", " "),
                     "story_type": story_type,
-                    "date": datetime.datetime.fromtimestamp(os.path.getctime(video_file)).strftime("%b %d, %Y"),
+                    "date": datetime.datetime.fromtimestamp(os.path.getctime(file_for_date)).strftime("%b %d, %Y"),
                     "thumbnail": thumbnail,
-                    "video_url": f"api/video_file/{story_type}/{story_title}"
-                })
+                    "video_url": f"api/video_file/{story_type}/{story_title}" if os.path.exists(video_file) else None
+                }
+                print(f"Found project: {story_title} (ID: {entry['video_id']})")
+                video_list.append(entry)
     
     return {"videos": video_list}
 
@@ -343,6 +377,54 @@ def get_video_file(story_type: str, story_title: str):
     if os.path.exists(video_path):
         return FileResponse(video_path, media_type="video/mp4")
     raise HTTPException(status_code=404, detail="Video not found")
+
+@app.get("/api/video_details/{story_type}/{story_title}")
+def get_video_details(story_type: str, story_title: str):
+    data_dir = os.path.join(os.path.dirname(script_dir), "data")
+    project_file = os.path.join(data_dir, story_type, story_title, "storyboard_project.json")
+    if os.path.exists(project_file):
+        with open(project_file, "r", encoding="utf-8") as f:
+            project_data = json.load(f)
+            
+            # Enrich with real durations if audio exists
+            story_path = os.path.join(data_dir, story_type, story_title)
+            import subprocess
+            
+            for scene in project_data.get("storyboards", []):
+                audio_file = os.path.join(story_path, "audio", f"scene_{scene['scene_number']}.mp3")
+                if os.path.exists(audio_file):
+                    try:
+                        # Use ffprobe to get duration
+                        cmd = [ffmpeg_path.replace('ffmpeg', 'ffprobe'), '-v', 'error', '-show_entries', 'format=duration', '-of', 'default=noprint_wrappers=1:nokey=1', audio_file]
+                        duration = subprocess.check_output(cmd).decode('utf-8').strip()
+                        scene["duration"] = float(duration)
+                    except Exception as e:
+                        print(f"Error getting duration for {audio_file}: {e}")
+                        scene["duration"] = 5.0 # Fallback
+                else:
+                    scene["duration"] = 5.0 # Fallback
+            
+            return project_data
+    raise HTTPException(status_code=404, detail="Project file not found")
+
+@app.delete("/api/delete_video/{story_type}/{video_id}")
+def delete_video(story_type: str, video_id: str):
+    print(f"Request to delete video: Type={story_type}, ID={video_id}")
+    data_dir = os.path.join(os.path.dirname(script_dir), "data")
+    story_path = os.path.join(data_dir, story_type, video_id)
+    print(f"Checking path: {story_path}")
+    if os.path.exists(story_path):
+        import shutil
+        try:
+            shutil.rmtree(story_path)
+            # Also cleanup empty story_type directory if needed
+            story_type_path = os.path.dirname(story_path)
+            if not os.listdir(story_type_path):
+                os.rmdir(story_type_path)
+            return {"status": "success", "message": f"Project {video_id} deleted"}
+        except Exception as e:
+            raise HTTPException(status_code=500, detail=f"Failed to delete project: {str(e)}")
+    raise HTTPException(status_code=404, detail="Project not found")
 def get_status(job_id: str):
     if job_id not in jobs:
         raise HTTPException(status_code=404, detail="Job not found")
@@ -356,6 +438,19 @@ def get_video(job_id: str):
     if not video_path or not os.path.exists(video_path):
         raise HTTPException(status_code=404, detail="Video not ready or not found")
     return FileResponse(video_path, media_type="video/mp4")
+
+@app.get("/api/image")
+def get_image(path: str):
+    if not path:
+        raise HTTPException(status_code=400, detail="Path is required")
+    # Basic security check: ensure path is within the project directory
+    project_root = os.path.abspath(os.path.dirname(script_dir))
+    requested_path = os.path.abspath(path)
+    if not requested_path.startswith(project_root):
+         raise HTTPException(status_code=403, detail="Path not allowed")
+    if os.path.exists(requested_path):
+        return FileResponse(requested_path)
+    raise HTTPException(status_code=404, detail="Image not found")
 
 if __name__ == "__main__":
     import uvicorn

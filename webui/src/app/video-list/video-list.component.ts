@@ -1,6 +1,8 @@
 import { Component, OnInit } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 
+import { Router } from '@angular/router';
+
 @Component({
   selector: 'app-video-list',
   template: `
@@ -32,7 +34,10 @@ import { HttpClient } from '@angular/common/http';
             
             <div class="video-info">
               <h3 class="video-title">{{video.title}}</h3>
-              <button class="delete-btn">🗑️</button>
+              <div class="card-actions">
+                <button class="edit-btn" (click)="$event.stopPropagation(); editVideo(video)">✏️</button>
+                <button class="delete-btn" (click)="$event.stopPropagation(); deleteVideo(video)">🗑️</button>
+              </div>
             </div>
             
             <div class="video-meta">
@@ -191,14 +196,23 @@ import { HttpClient } from '@angular/common/http';
       -webkit-box-orient: vertical;
       overflow: hidden;
     }
-    .delete-btn {
+    .card-actions {
+      display: flex;
+      gap: 0.5rem;
+    }
+    .edit-btn, .delete-btn {
       background: transparent;
       border: none;
-      color: var(--danger-color);
       cursor: pointer;
       font-size: 1rem;
       opacity: 0.5;
+      transition: opacity 0.2s;
     }
+    .video-card:hover .edit-btn, .video-card:hover .delete-btn {
+      opacity: 1;
+    }
+    .edit-btn { color: var(--primary-accent); }
+    .delete-btn { color: var(--danger-color); }
 
     .video-meta {
       padding: 0.5rem 1rem 1rem;
@@ -263,7 +277,7 @@ export class VideoListComponent implements OnInit {
   isLoading = true;
   playingVideo: any = null;
 
-  constructor(private http: HttpClient) { }
+  constructor(private http: HttpClient, private router: Router) { }
 
   ngOnInit() {
     this.fetchVideos();
@@ -285,5 +299,30 @@ export class VideoListComponent implements OnInit {
 
   playVideo(video: any) {
     this.playingVideo = video;
+  }
+
+  deleteVideo(video: any) {
+    if (confirm(`Apakah Anda yakin ingin menghapus video "${video.title}"?`)) {
+      const url = `http://localhost:8000/api/delete_video/${encodeURIComponent(video.story_type)}/${encodeURIComponent(video.video_id)}`;
+      this.http.delete<any>(url).subscribe({
+        next: (res) => {
+          console.log('Video deleted:', res);
+          this.fetchVideos();
+        },
+        error: (err) => {
+          console.error('Failed to delete video', err);
+          alert('Gagal menghapus video.');
+        }
+      });
+    }
+  }
+
+  editVideo(video: any) {
+    this.router.navigate(['/editor'], {
+      queryParams: {
+        edit_type: video.story_type,
+        edit_title: video.video_id
+      }
+    });
   }
 }
