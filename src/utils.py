@@ -1,7 +1,6 @@
 import os
 import re
 import json
-from datetime import datetime
 import datetime
 from typing import List, Dict
 from PIL import Image
@@ -82,7 +81,7 @@ def create_empty_storyboard(title):
         "project_info": {
             "title": title,
             "user": "AI Generated",
-            "timestamp": datetime.now().strftime("%Y-%m-%d %I:%M:%S %p")
+            "timestamp": datetime.datetime.now().strftime("%Y-%m-%d %I:%M:%S %p")
         },
         "storyboards": []
     }
