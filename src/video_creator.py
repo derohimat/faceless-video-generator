@@ -8,6 +8,7 @@ from moviepy.editor import (
 from audio_generator import generate_audio
 from transitions import zoom
 import os
+import shortcap
 from utils import create_resource_dir, load_config, create_blank_image
 
 script_dir = os.path.dirname(os.path.abspath(__file__))

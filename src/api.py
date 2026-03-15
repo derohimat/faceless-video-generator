@@ -10,15 +10,21 @@ import fal_client
 
 def submit_fal_request(prompt: str, config: dict) -> Optional[str]:
     try:
+        arguments = {
+            "prompt": prompt,
+            "image_size": config.get("image_size", "portrait_16_9"),
+            "num_images": config.get("num_images", 1),
+            "num_inference_steps": config.get("num_inference_steps", 4),
+            "enable_safety_checker": config.get("enable_safety_checker", False),
+        }
+        
+        if "guidance_scale" in config:
+            arguments["guidance_scale"] = config["guidance_scale"]
+            
+        print(f"Submitting FAL AI request for model {config['model']} with arguments: {arguments}")
         handler = fal_client.submit(
             config["model"],
-            arguments={
-                "prompt": prompt,
-                "image_size": config["image_size"],
-                "num_images": config["num_images"],
-                "num_inference_steps": config["num_inference_steps"],
-                "enable_safety_checker": config["enable_safety_checker"],
-            },
+            arguments=arguments,
         )
 
         result = handler.get()
@@ -41,10 +47,12 @@ def fal_flux_api(prompt: str, max_retries: int = 3) -> Optional[bytes]:
         try:
             image_url = submit_fal_request(prompt, fal_config)
             if image_url:
+                print(f"FAL AI image generated: {image_url}")
                 response = requests.get(image_url)
                 response.raise_for_status()
                 return response.content
             else:
+                print("FAL AI API returned no image URL.")
                 raise ValueError("No image URL returned from FAL AI API")
         except Exception as e:
             if attempt < max_retries - 1:

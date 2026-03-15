@@ -1,3 +1,9 @@
+import sys
+import io
+# Fix Windows console encoding for emoji/unicode output
+sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding='utf-8', errors='replace')
+sys.stderr = io.TextIOWrapper(sys.stderr.buffer, encoding='utf-8', errors='replace')
+
 import os
 import imageio_ffmpeg
 # Add ffmpeg to PATH
@@ -144,7 +150,7 @@ def run_generation_job(job_id: str, request: GenerateRequest):
             storyboard_project,
             story_dir,
             image_style,
-            replicate_flux_api,
+            fal_flux_api,
         )
 
         for i, storyboard in enumerate(storyboard_project['storyboards']):
@@ -275,7 +281,7 @@ def run_video_from_script_job(job_id: str, request: VideoFromScriptRequest):
             storyboard_project,
             story_dir,
             image_style,
-            replicate_flux_api,
+            fal_flux_api,
         )
 
         for i, storyboard in enumerate(storyboard_project['storyboards']):
@@ -339,9 +345,11 @@ def list_videos():
                     image_files = [f for f in os.listdir(images_dir) if f.endswith(('.png', '.jpg', '.jpeg'))]
                     if image_files:
                         thumbnail = f"api/thumbnail/{story_type}/{story_title}"
-                elif os.path.exists(os.path.join(story_path, "scene_1.png")):
-                    # Fallback for older style structure
-                    thumbnail = f"api/thumbnail/{story_type}/{story_title}"
+                else:
+                    # Search in the story root directory
+                    image_files = [f for f in os.listdir(story_path) if f.endswith(('.png', '.jpg', '.jpeg'))]
+                    if image_files:
+                        thumbnail = f"api/thumbnail/{story_type}/{story_title}"
                 
                 # Use project file creation time if video is missing
                 file_for_date = video_file if os.path.exists(video_file) else project_file
@@ -368,6 +376,13 @@ def get_thumbnail(story_type: str, story_title: str):
         image_files = [f for f in os.listdir(images_dir) if f.endswith(('.png', '.jpg', '.jpeg'))]
         if image_files:
             return FileResponse(os.path.join(images_dir, image_files[0]))
+    
+    # Fallback to searching in the story root directory
+    if os.path.exists(story_path):
+        image_files = [f for f in os.listdir(story_path) if f.endswith(('.png', '.jpg', '.jpeg'))]
+        if image_files:
+            return FileResponse(os.path.join(story_path, image_files[0]))
+            
     raise HTTPException(status_code=404, detail="Thumbnail not found")
 
 @app.get("/api/video_file/{story_type}/{story_title}")
@@ -425,6 +440,7 @@ def delete_video(story_type: str, video_id: str):
         except Exception as e:
             raise HTTPException(status_code=500, detail=f"Failed to delete project: {str(e)}")
     raise HTTPException(status_code=404, detail="Project not found")
+@app.get("/api/status/{job_id}")
 def get_status(job_id: str):
     if job_id not in jobs:
         raise HTTPException(status_code=404, detail="Job not found")

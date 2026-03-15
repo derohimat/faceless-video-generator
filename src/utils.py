@@ -39,9 +39,16 @@ def create_resource_dir(script_dir, story_type, title):
     # Remove leading and trailing quotation marks and spaces
     clean_title = title.strip().strip('"')
 
+    # Remove emojis and non-ASCII characters
+    clean_title = clean_title.encode('ascii', 'ignore').decode('ascii').strip()
+
     # Remove special characters and replace spaces with underscores
     clean_title = re.sub(r'[^\w\s-]', '', clean_title)
     clean_title = re.sub(r'[-\s]+', '_', clean_title)
+
+    # Ensure the title is not empty after cleaning
+    if not clean_title:
+        clean_title = 'untitled'
 
     # Create data directory if it doesn't exist
     data_dir = os.path.join(os.path.dirname(script_dir), "data")
@@ -163,7 +170,7 @@ def load_config(config_file='config.json'):
 def create_blank_image(filename, width=720, height=1280):
     blank_image = Image.new('RGB', (width, height), color='black')
     blank_image.save(filename)
-    print(f"Created blank image: {filename}")
+    print(f"Created blank image: {filename.encode('ascii', 'ignore').decode('ascii')}")
 
 def pick_voice_name():
     # alloy, echo, fable, onyx, nova, and shimmer

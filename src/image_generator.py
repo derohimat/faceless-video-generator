@@ -76,6 +76,7 @@ def generate_and_download_images(
                     image_files.append(image_files[-1])
                 else:
                     # For the first image, create a blank image
+                    print(f"Crucial failure: First image generation failed for scene {storyboard['scene_number']}. Creating blank image.")
                     create_blank_image(image_filename)
                     storyboard['image'] = image_filename
                     image_files.append(image_filename)
@@ -86,6 +87,7 @@ def generate_and_download_images(
                 image_files.append(image_files[-1])
             else:
                 # For the first image, create a blank image
+                print(f"Crucial failure: First image generation (null content) for scene {storyboard['scene_number']}. Creating blank image.")
                 image_filename = os.path.join(story_dir, f"scene_{storyboard['scene_number']}.png")
                 create_blank_image(image_filename)
                 storyboard['image'] = image_filename

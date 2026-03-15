@@ -292,8 +292,12 @@ import { Router, ActivatedRoute } from '@angular/router';
     }
     .scene-item {
       display: flex;
-      align-items: center;
-      gap: 1rem;
+      align-items: flex-start;
+      gap: 1.25rem;
+      background: rgba(255,255,255,0.03);
+      padding: 1.25rem;
+      border-radius: var(--radius-md);
+      border: 1px solid var(--border-color);
     }
     .scene-number {
       background: var(--primary-accent);
@@ -309,9 +313,11 @@ import { Router, ActivatedRoute } from '@angular/router';
       flex-shrink: 0;
     }
     .scene-input-wrapper.vertical {
+      flex: 1;
+      display: flex;
       flex-direction: column;
       align-items: stretch;
-      gap: 0.75rem;
+      gap: 1.25rem;
     }
     .input-with-label {
       display: flex;
@@ -321,19 +327,31 @@ import { Router, ActivatedRoute } from '@angular/router';
     .tiny-label {
       font-size: 0.7rem;
       text-transform: uppercase;
-      color: var(--text-muted);
-      font-weight: 600;
-      letter-spacing: 0.02em;
+      color: var(--primary-accent);
+      font-weight: 700;
+      letter-spacing: 0.05em;
+      margin-bottom: 0.25rem;
     }
+    .input-with-label input,
     .input-with-label textarea {
       background: var(--bg-input);
       border: 1px solid var(--border-color);
       border-radius: var(--radius-sm);
-      padding: 0.5rem;
+      padding: 0.75rem 1rem;
       color: var(--text-primary);
-      font-size: 0.85rem;
+      font-size: 0.95rem;
       font-family: inherit;
+      width: 100%;
+      outline: none;
+      transition: border-color 0.25s;
+    }
+    .input-with-label input:focus,
+    .input-with-label textarea:focus {
+      border-color: var(--primary-accent);
+    }
+    .input-with-label textarea {
       resize: vertical;
+      min-height: 80px;
     }
     .delete-scene {
       background: transparent;
